@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medora - Premium AI Disease Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: '#0a0a0a',
+              surface: '#121212',
+              surfaceHover: '#1a1a1a',
+              borderline: 'rgba(255,255,255,0.08)',
+              textMain: '#fafafa',
+              textMuted: '#a1a1aa',
+              primary: '#6366f1',
+              primaryHover: '#4f46e5',
+            },
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #0a0a0a;
+        color: #fafafa;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      .glass-nav {
+        background: rgba(10, 10, 10, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+      }
+      .gradient-text {
+        background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      
+      /* Smooth animations */
+      .feature-card { transition: transform 0.3s ease, border-color 0.3s ease; }
+      .feature-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); }
+      
+      /* Scroll Reveal Animations */
+      .reveal { opacity: 0; filter: blur(10px); transform: translateY(30px) scale(0.95); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); will-change: opacity, transform, filter; }
+      .reveal.active { opacity: 1; filter: blur(0px); transform: translateY(0) scale(1); }
+      
+      .reveal-left { opacity: 0; filter: blur(10px); transform: translateX(-40px) scale(0.95); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+      .reveal-left.active { opacity: 1; filter: blur(0px); transform: translateX(0) scale(1); }
+      
+      .reveal-right { opacity: 0; filter: blur(10px); transform: translateX(40px) scale(0.95); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+      .reveal-right.active { opacity: 1; filter: blur(0px); transform: translateX(0) scale(1); }
+
+      /* Orb Effects */
+      .glow-orb {
+        position: absolute; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: 0.15;
+      }
+      
+      /* Mockup UI utilities */
+      .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+      /* Accordion */
+      .faq-answer { display: none; }
+      details[open] .faq-answer { display: block; animation: slideDown 0.3s ease-out; }
+      details > summary { list-style: none; }
+      details > summary::-webkit-details-marker { display: none; }
+      @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #0a0a0a; }
+      ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    </style>
+</head>
+<body class="bg-background text-textMain antialiased overflow-x-hidden relative">
+
+    <!-- Ambient Glowing Orbs -->
+    <div class="glow-orb bg-indigo-600 w-[600px] h-[600px] top-[-20%] left-[-10%] z-[-1]"></div>
+    <div class="glow-orb bg-purple-600 w-[500px] h-[500px] top-[20%] right-[-10%] z-[-1]"></div>
+    <div class="glow-orb bg-emerald-600 w-[700px] h-[700px] bottom-10 left-[20%] opacity-10 z-[-1]"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full top-0 z-50 glass-nav border-b border-borderline">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-white hover:opacity-80 transition">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                Medora
+            </a>
+            <ul class="hidden md:flex items-center gap-8">
+                <li><a href="#features" class="text-sm font-semibold text-textMuted hover:text-white transition">Features</a></li>
+                <li><a href="#faq" class="text-sm font-semibold text-textMuted hover:text-white transition">FAQ</a></li>
+                <li><a href="/doctor/login" class="text-sm font-semibold text-textMuted hover:text-white transition">Doctor Login</a></li>
+                <li>
+                    <div id="google_translate_element" class="px-3 py-1.5 rounded-lg border border-borderline bg-surface hover:bg-surfaceHover cursor-pointer flex items-center transition">
+                        <svg class="w-4 h-4 text-textMuted mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2v20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </div>
+                </li>
+            </ul>
+            <div class="flex items-center gap-4">
+                <a href="/predict" class="px-5 py-2.5 bg-white text-black hover:bg-gray-100 rounded-full text-sm font-bold tracking-wide transition shadow-lg shadow-white/10 hidden md:block">
+                    Start Health Check
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-40 pb-20 px-6 text-center max-w-4xl mx-auto flex flex-col items-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-8">
+            <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+            Medora AI 2.0 Live
+        </div>
+        
+        <h1 class="reveal text-6xl md:text-8xl font-extrabold tracking-tighter leading-[1.1] mb-6">
+            Understand.<br />
+            Predict.<br />
+            <span class="gradient-text">Heal.</span>
+        </h1>
+        
+        <p class="reveal text-lg md:text-xl text-textMuted max-w-2xl mx-auto mb-10 leading-relaxed font-medium" style="transition-delay: 100ms;">
+            Analyze your symptoms using advanced AI. Get clinical insights and instantly book appointments with local specialists in just three clicks.
+        </p>
+        
+        <div class="reveal flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto" style="transition-delay: 200ms;">
+            <a href="/predict" class="w-full sm:w-auto px-8 py-4 bg-white text-black hover:bg-gray-200 rounded-full font-bold text-lg transition shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+                Start prediction &rarr;
+            </a>
+            <a href="/doctor/login" class="w-full sm:w-auto px-8 py-4 glass-card hover:bg-surface text-white rounded-full font-bold text-lg transition">
+                Doctor Portal
+            </a>
+        </div>
+        
+        <!-- Social Proof -->
+        <div class="mt-12 flex flex-col items-center gap-3">
+            <div class="flex -space-x-3">
+                <img class="w-10 h-10 rounded-full border-2 border-background" src="https://i.pravatar.cc/100?img=1" alt="User">
+                <img class="w-10 h-10 rounded-full border-2 border-background" src="https://i.pravatar.cc/100?img=2" alt="User">
+                <img class="w-10 h-10 rounded-full border-2 border-background" src="https://i.pravatar.cc/100?img=3" alt="User">
+                <img class="w-10 h-10 rounded-full border-2 border-background" src="https://i.pravatar.cc/100?img=4" alt="User">
+                <div class="w-10 h-10 rounded-full border-2 border-background bg-surface flex items-center justify-center text-xs font-bold text-indigo-400">+4k</div>
+            </div>
+            <span class="text-sm font-medium text-textMuted">Trusted by thousands of patients worldwide</span>
+        </div>
+    </header>
+
+    <!-- The Zig-Zag Features -->
+    <section id="features" class="max-w-7xl mx-auto px-6 py-20 flex flex-col gap-32">
+        
+        <!-- Feature 1 -->
+        <div class="flex flex-col md:flex-row items-center gap-12 lg:gap-24 overflow-hidden">
+            <div class="reveal-left flex-1 space-y-6">
+                <div class="text-indigo-400 text-sm font-bold uppercase tracking-widest">Step 1</div>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">Tell us how you feel.</h2>
+                <p class="text-lg text-textMuted leading-relaxed">
+                    Select exactly what you're experiencing from our exhaustive database of over 100 medical symptoms. Our smart search understands what you mean.
+                </p>
+            </div>
+            <div class="reveal-right flex-1 w-full relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 blur-3xl rounded-full"></div>
+                <!-- Visual Mockup -->
+                <div class="w-full aspect-[4/3] glass-card rounded-2xl relative border border-white/10 p-6 flex flex-col overflow-hidden">
+                    <!-- Top Bar -->
+                    <div class="flex gap-2 mb-6">
+                        <div class="mockup-dot bg-red-500"></div><div class="mockup-dot bg-yellow-500"></div><div class="mockup-dot bg-green-500"></div>
+                    </div>
+                    <!-- Mockup content -->
+                    <div class="bg-black/50 rounded-xl border border-white/5 p-4 mb-4 flex items-center gap-3">
+                        <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <span class="text-gray-400 font-medium">Search symptoms... (e.g., High fever)</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-sm font-bold flex items-center gap-2">Chills ✕</span>
+                        <span class="px-3 py-1.5 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-sm font-bold flex items-center gap-2">Fatigue ✕</span>
+                        <span class="px-3 py-1.5 bg-surface border border-white/5 text-gray-400 rounded-lg text-sm font-medium">Cough +</span>
+                        <span class="px-3 py-1.5 bg-surface border border-white/5 text-gray-400 rounded-lg text-sm font-medium">Headache +</span>
+                        <span class="px-3 py-1.5 bg-surface border border-white/5 text-gray-400 rounded-lg text-sm font-medium">Nausea +</span>
+                    </div>
+                    <!-- Cursor -->
+                    <svg class="absolute bottom-10 right-20 w-8 h-8 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.3.9-3.2-7.4-4.4 4.3z"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-24 overflow-hidden">
+            <div class="reveal-right flex-1 space-y-6">
+                <div class="text-purple-400 text-sm font-bold uppercase tracking-widest">Step 2</div>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">AI-driven insights.</h2>
+                <p class="text-lg text-textMuted leading-relaxed">
+                    Our machine learning model instantly cross-references your symptoms across 41 conditions to predict the most likely disease with high precision.
+                </p>
+            </div>
+            <div class="reveal-left flex-1 w-full relative">
+                <div class="absolute inset-0 bg-gradient-to-l from-purple-500/20 to-pink-500/20 blur-3xl rounded-full"></div>
+                <!-- Visual Mockup -->
+                <div class="w-full aspect-[4/3] glass-card rounded-2xl relative border border-white/10 p-6 flex flex-col justify-center gap-4">
+                    <div class="p-5 bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 rounded-l-xl"></div>
+                        <div class="flex justify-between items-end mb-2">
+                            <h4 class="text-lg font-bold text-white">Malaria</h4>
+                            <span class="text-purple-400 font-bold text-xl">94%</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 w-[94%]"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 bg-black/40 rounded-xl border border-white/5 relative">
+                        <div class="flex justify-between items-end mb-2">
+                            <h4 class="text-lg font-bold text-white opacity-60">Dengue</h4>
+                            <span class="text-white opacity-60 font-bold">12%</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-white/30 w-[12%]"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Decorative scanner line -->
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/10 to-transparent h-20 animate-[slideDown_3s_infinite] pointer-events-none"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="flex flex-col md:flex-row items-center gap-12 lg:gap-24 overflow-hidden">
+            <div class="reveal-left flex-1 space-y-6">
+                <div class="text-emerald-400 text-sm font-bold uppercase tracking-widest">Step 3</div>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">Find local specialists.</h2>
+                <p class="text-lg text-textMuted leading-relaxed">
+                    Based on your prediction, we immediately search our network of vetted doctors and recommend specialists precisely tailored to your condition. 
+                </p>
+            </div>
+            <div class="reveal-right flex-1 w-full relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 blur-3xl rounded-full"></div>
+                <!-- Visual Mockup -->
+                <div class="w-full aspect-[4/3] glass-card rounded-2xl relative border border-white/10 p-6 flex flex-col gap-4 bg-[#0a0a0a]/80">
+                    <div class="text-sm font-bold text-gray-400 mb-2">Recommended Specialists (Infectious Diseases)</div>
+                    
+                    <div class="bg-surface rounded-xl p-4 flex gap-4 border border-white/5 items-center">
+                        <div class="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 font-bold border border-emerald-500/30">RK</div>
+                        <div class="flex-1">
+                            <div class="font-bold text-white flex items-center gap-2">Dr. Rajesh Kumar <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span></div>
+                            <div class="text-xs text-textMuted">Devra Clinic • Ranchi</div>
+                        </div>
+                        <div class="px-3 py-1.5 bg-white text-black text-xs font-bold rounded-md">View</div>
+                    </div>
+
+                    <div class="bg-surface rounded-xl p-4 flex gap-4 border border-white/5 items-center opacity-60 scale-95 transform origin-top">
+                        <div class="w-12 h-12 bg-gray-500/20 rounded-full flex items-center justify-center text-gray-400 font-bold border border-white/10">VM</div>
+                        <div class="flex-1">
+                            <div class="font-bold text-white">Dr. V.S.V. Prasad</div>
+                            <div class="text-xs text-textMuted">Internal Medicine • Dhanbad</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-24">
+            <div class="flex-1 space-y-6">
+                <div class="text-blue-400 text-sm font-bold uppercase tracking-widest">Step 4</div>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">Frictionless booking.</h2>
+                <p class="text-lg text-textMuted leading-relaxed">
+                    No sign-ups required. Pick an available 1-hour slot, enter your name and email, and secure your appointment instantly. The doctor is notified immediately.
+                </p>
+            </div>
+            <div class="flex-1 w-full relative">
+                <div class="absolute inset-0 bg-gradient-to-l from-blue-500/20 to-sky-500/20 blur-3xl rounded-full"></div>
+                <!-- Visual Mockup -->
+                <div class="w-full aspect-[4/3] glass-card rounded-2xl relative border border-white/10 p-6 flex flex-col bg-[#0a0a0a]/80 justify-center">
+                    <div class="bg-black/60 rounded-xl border border-white/10 p-5 w-full max-w-sm mx-auto shadow-2xl">
+                        <div class="font-bold text-white mb-4">Select a Time</div>
+                        <div class="grid grid-cols-2 gap-2 mb-6">
+                            <div class="py-2 text-center rounded-lg border border-white/10 text-gray-400 text-sm font-medium line-through bg-white/5">10:00 AM</div>
+                            <div class="py-2 text-center rounded-lg bg-blue-600 text-white text-sm font-bold shadow-[0_0_15px_rgba(37,99,235,0.5)]">11:00 AM</div>
+                            <div class="py-2 text-center rounded-lg border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 cursor-pointer">12:00 PM</div>
+                            <div class="py-2 text-center rounded-lg border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 cursor-pointer">01:00 PM</div>
+                        </div>
+                        <div class="w-full py-3 bg-white text-black text-center font-bold rounded-lg cursor-pointer hover:bg-gray-200 transition">
+                            Book Appointment
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mini Features Grid -->
+    <section class="max-w-6xl mx-auto px-6 py-20 border-t border-borderline">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-extrabold text-white">And a whole lot more.</h2>
+            <p class="text-textMuted mt-3">Everything you need to get the right care, faster.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Box 1 -->
+            <div class="glass-card feature-card p-8 rounded-2xl">
+                <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 mb-4">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Instant Results</h3>
+                <p class="text-sm text-textMuted leading-relaxed">Stop waiting for days. Get high-accuracy predictions the moment you hit submit.</p>
+            </div>
+            <!-- Box 2 -->
+            <div class="glass-card feature-card p-8 rounded-2xl">
+                <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 mb-4">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Secure & Private</h3>
+                <p class="text-sm text-textMuted leading-relaxed">No account required to predict. Your medical data stays private and secure.</p>
+            </div>
+            <!-- Box 3 -->
+            <div class="glass-card feature-card p-8 rounded-2xl">
+                <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 mb-4">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">41+ Conditions</h3>
+                <p class="text-sm text-textMuted leading-relaxed">Trained on massive global datasets to accurately recognize numerous common and rare diseases.</p>
+            </div>
+            <!-- Box 4 -->
+            <div class="glass-card feature-card p-8 rounded-2xl">
+                <div class="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center text-pink-400 mb-4">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Local Network</h3>
+                <p class="text-sm text-textMuted leading-relaxed">Integrated seamlessly with local clinics and major hospitals to help you find care nearby.</p>
+            </div>
+            <!-- Box 5 -->
+            <div class="glass-card feature-card p-8 rounded-2xl">
+                <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 mb-4">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Doctor Portal</h3>
+                <p class="text-sm text-textMuted leading-relaxed">Doctors get a dedicated dashboard to manage out-patient slots and view appointments.</p>
+            </div>
+            <!-- Box 6 -->
+            <div class="glass-card feature-card p-8 rounded-2xl">
+                <div class="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-400 mb-4">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Multi-lingual</h3>
+                <p class="text-sm text-textMuted leading-relaxed">Translate the interface into any regional language instantly with our built-in selector.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Disclaimer Banner -->
+    <section class="max-w-5xl mx-auto px-6 py-12">
+        <div class="w-full rounded-[2rem] p-[1px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
+            <!-- Animated gradient background -->
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-20 blur-xl animate-pulse"></div>
+            
+            <div class="bg-background rounded-[calc(2rem-1px)] p-12 relative z-10 text-center flex flex-col items-center justify-center shadow-2xl">
+                <svg class="w-12 h-12 text-pink-500 mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <h3 class="text-2xl md:text-3xl font-extrabold text-white mb-4 line-clamp-2 leading-tight">
+                    "Medora is built for educational & preliminary informational purposes."
+                </h3>
+                <p class="text-textMuted max-w-xl text-sm leading-relaxed mb-6">
+                    It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for medical concerns. Do not disregard professional advice based on AI predictions.
+                </p>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center font-bold">!</div>
+                    <span class="text-sm font-bold text-white">In case of emergency, contact local services.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="max-w-3xl mx-auto px-6 py-20">
+        <h2 class="reveal text-3xl font-extrabold text-white text-center mb-12">Frequently Asked Questions</h2>
+        <div class="space-y-4">
+            <details class="reveal glass-card rounded-2xl group border border-white/5">
+                <summary class="font-bold text-lg p-6 cursor-pointer flex justify-between items-center text-white">
+                    How accurate is the AI model?
+                    <span class="text-indigo-400 group-open:rotate-45 transition-transform text-2xl font-normal leading-none">+</span>
+                </summary>
+                <div class="faq-answer px-6 pb-6 text-textMuted text-sm leading-relaxed">
+                    Our machine learning models have been trained on extensive sets of validated medical data across 41 common conditions. While highly accurate for preliminary screening, it must never replace a formal medical diagnosis from a licensed physical examination.
+                </div>
+            </details>
+            <details class="reveal glass-card rounded-2xl group border border-white/5" style="transition-delay: 100ms;">
+                <summary class="font-bold text-lg p-6 cursor-pointer flex justify-between items-center text-white">
+                    Do I need an account to book?
+                    <span class="text-indigo-400 group-open:rotate-45 transition-transform text-2xl font-normal leading-none">+</span>
+                </summary>
+                <div class="faq-answer px-6 pb-6 text-textMuted text-sm leading-relaxed">
+                    No! We believe in frictionless access to healthcare. You can check your symptoms and book an available time slot with a local specialist simply by providing your name and email address.
+                </div>
+            </details>
+            <details class="reveal glass-card rounded-2xl group border border-white/5" style="transition-delay: 200ms;">
+                <summary class="font-bold text-lg p-6 cursor-pointer flex justify-between items-center text-white">
+                    How do doctors manage appointments?
+                    <span class="text-indigo-400 group-open:rotate-45 transition-transform text-2xl font-normal leading-none">+</span>
+                </summary>
+                <div class="faq-answer px-6 pb-6 text-textMuted text-sm leading-relaxed">
+                    Registered doctors get access to a private web portal where they can set their working 1-hour time slots, view incoming bookings, and mark appointments as completed or cancelled.
+                </div>
+            </details>
+            <details class="reveal glass-card rounded-2xl group border border-white/5" style="transition-delay: 300ms;">
+                <summary class="font-bold text-lg p-6 cursor-pointer flex justify-between items-center text-white">
+                    Is my health data kept private?
+                    <span class="text-indigo-400 group-open:rotate-45 transition-transform text-2xl font-normal leading-none">+</span>
+                </summary>
+                <div class="faq-answer px-6 pb-6 text-textMuted text-sm leading-relaxed">
+                    Yes. All predictions and bookings are handled securely. Your symptom data is solely used to generate immediate predictions and pass necessary context to the doctor you choose to book with.
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="max-w-4xl mx-auto px-6 py-24 text-center">
+        <div class="reveal w-16 h-16 rounded-2xl bg-white text-black flex items-center justify-center mx-auto mb-6 shadow-[0_0_50px_rgba(255,255,255,0.3)]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-8 h-8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <h2 class="reveal text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight" style="transition-delay: 100ms;">Ready to try Medora?</h2>
+        <p class="reveal text-textMuted mb-10 max-w-md mx-auto font-medium" style="transition-delay: 200ms;">Takes 60 seconds to analyze symptoms and schedule an expert appointment.</p>
+        <a href="/predict" class="reveal inline-block px-10 py-5 bg-white text-black hover:bg-gray-200 rounded-full font-bold text-lg transition shadow-xl hover:scale-105 transform" style="transition-delay: 300ms;">
+            Start your Health Check
+        </a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-borderline py-12 mt-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-2 text-white font-extrabold tracking-tight">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-5 h-5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Medora AI
+            </div>
+            <div class="text-sm font-medium text-textMuted flex gap-6">
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#faq" class="hover:text-white transition">FAQ</a>
+                <a href="/doctor/login" class="hover:text-white transition">Doctor Login</a>
+            </div>
+            <p class="text-xs text-textMuted/50">&copy; 2026 Medora Healthcare App. Open-source concept.</p>
+        </div>
+    </footer>
+
+    <!-- Google Translate Script -->
+    <style>
+      .goog-te-gadget { font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 0 !important; color: transparent !important; }
+      .goog-te-gadget .goog-te-combo { font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 13px !important; font-weight:600; color: #fafafa !important; background-color: #121212 !important; border:1px solid rgba(255,255,255,0.1); outline:none; padding:6px 10px; border-radius:8px; cursor:pointer; }
+      .goog-te-gadget .goog-te-combo option { background-color: #121212 !important; color: #fff !important; }
+      .goog-te-banner-frame, .goog-te-gadget img { display:none !important; }
+      body { top: 0px !important; }
+    </style>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: "en",
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false,
+        }, "google_translate_element");
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script>
+      // Scroll Reveal Animations
+      document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('active');
+            }
+          });
+        }, {
+          threshold: 0.1,
+          rootMargin: "0px"
+        });
+
+        const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+        revealElements.forEach(el => observer.observe(el));
+
+        // Immediately trigger elements above fold to avoid lag
+        setTimeout(() => {
+          revealElements.forEach(el => {
+            if (el.getBoundingClientRect().top < window.innerHeight) {
+              el.classList.add('active');
+            }
+          });
+        }, 50);
+      });
+    </script>
+</body>
+</html>

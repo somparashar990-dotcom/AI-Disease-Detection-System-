@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Disease - Medora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: '#0a0a0a',
+              surface: '#121212',
+              surfaceHover: '#1a1a1a',
+              borderline: 'rgba(255, 255, 255, 0.08)',
+              textMain: '#fafafa',
+              textMuted: '#a1a1aa',
+              primary: '#6366f1',
+            },
+            fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
+          }
+        }
+      }
+    </script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .glass-panel { @apply bg-white/5 border border-white/10 backdrop-blur-md; }
+      }
+
+      /* Base */
+      body { @apply bg-background text-textMain font-sans antialiased overflow-x-hidden; }
+      ::-webkit-scrollbar { @apply w-2 h-2; }
+      ::-webkit-scrollbar-track { @apply bg-background; }
+      ::-webkit-scrollbar-thumb { @apply bg-white/15 rounded-full hover:bg-white/25 transition; }
+
+      /* JS Logic Classes needed for predict functionality */
+      .symptom-section { @apply hidden opacity-0 transition-opacity duration-300; }
+      .symptom-section.active { @apply block opacity-100; }
+
+      .category-link { @apply block px-4 py-3 rounded-xl text-textMuted font-medium transition hover:text-white hover:bg-white/5 mb-2 border border-transparent; }
+      .category-link.active { @apply bg-primary/10 text-primary border-primary/20 shadow-sm shadow-primary/5; }
+
+      .symptoms-grid { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4; }
+      .symptoms-grid label { @apply flex items-center p-4 rounded-xl glass-panel cursor-pointer hover:border-primary/50 hover:bg-white/10 transition; }
+      .symptoms-grid input[type="checkbox"] { @apply appearance-none w-5 h-5 rounded-[6px] border-2 border-white/20 mr-4 cursor-pointer relative transition focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background; }
+      .symptoms-grid input[type="checkbox"]:checked { @apply bg-primary border-primary; }
+      .symptoms-grid input[type="checkbox"]:checked::after { content: '\2713'; @apply text-white text-xs font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2; }
+
+      /* Modals */
+      .modal { @apply fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 sm:p-6 overflow-y-auto; }
+      .modal-content { @apply bg-surface border border-borderline rounded-3xl w-full max-w-2xl relative my-auto shadow-2xl; animation: scaleIn 0.3s ease; }
+      .modal-content-inner { @apply max-h-[85vh] overflow-y-auto rounded-3xl; }
+      .modal-content-inner::-webkit-scrollbar { @apply w-1.5; }
+      .modal-close { @apply absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-textMuted hover:bg-white/10 hover:text-white transition z-10; }
+      @keyframes scaleIn { from { opacity:0; transform:scale(0.95) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+      /* Booking Specific injected by booking.js */
+      .booking-section { @apply mt-6 pt-6 border-t border-borderline; }
+      .booking-section-title { @apply text-lg font-bold text-white mb-4 flex items-center gap-2; }
+      .booking-section-title span { @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400; }
+      .specialty-chip { @apply inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 text-xs font-bold text-indigo-400 mb-4; }
+      
+      .doctors-grid { @apply grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2; }
+      .doctor-card { @apply bg-white/5 border border-white/10 rounded-2xl p-4 cursor-pointer transition hover:-translate-y-1 hover:bg-indigo-500/10 hover:border-indigo-500/40; }
+      .doctor-card-name { @apply text-sm font-bold text-white mb-1; }
+      .doctor-card-clinic { @apply text-xs text-textMuted mb-2; }
+      .doctor-card-city { @apply text-[11px] font-bold text-indigo-400 flex items-center gap-1; }
+      .btn-book-now { @apply w-full mt-3 py-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl text-white text-xs font-bold transition hover:opacity-90 shadow-lg shadow-indigo-500/20; }
+
+      .book-overlay { @apply fixed inset-0 z-[200] bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4; }
+      .book-overlay.open { @apply flex; }
+      .book-panel { @apply bg-surface border border-borderline rounded-3xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto relative; animation: scaleIn 0.25s ease; }
+      .book-panel-close { @apply absolute top-4 right-4 w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-textMuted hover:bg-white/15 hover:text-white transition; }
+      .book-panel h3 { @apply text-lg font-bold text-white mb-1; }
+      .book-panel .sub-head { @apply text-xs text-textMuted mb-6; }
+
+      .slots-section label { @apply text-[10px] font-bold uppercase tracking-wider text-textMuted block mb-3; }
+      .slots-list { @apply grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-1; }
+      .slot-btn { @apply bg-white/5 border border-white/10 rounded-xl text-textMuted text-xs font-medium py-2 text-center transition hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-white; }
+      .slot-btn.picked { @apply border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-bold; }
+      .slot-date-header { @apply col-span-3 text-[10px] font-bold text-textMuted/70 uppercase tracking-wide mt-2; }
+      
+      .book-form { @apply mt-6 space-y-4; }
+      .book-form-row { @apply grid grid-cols-2 gap-3; }
+      .book-field { @apply flex flex-col gap-1.5; }
+      .book-field label { @apply text-[10px] font-bold uppercase tracking-wider text-textMuted; }
+      .book-field input, .book-field textarea { @apply bg-white/5 border border-borderline rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition; }
+      .btn-confirm-book { @apply w-full py-4 mt-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl text-white text-sm font-bold shadow-lg shadow-emerald-500/25 transition hover:opacity-90 disabled:opacity-50; }
+      
+      .booking-success { @apply text-center py-6; }
+      .check-icon { @apply w-16 h-16 rounded-full bg-emerald-500/15 border-2 border-emerald-500/40 flex items-center justify-center text-2xl text-emerald-400 mx-auto mb-4; }
+      .booking-detail-box { @apply bg-white/5 border border-borderline rounded-2xl p-4 text-left my-6 text-sm space-y-2; }
+      
+      .loading-dots { @apply inline-flex gap-1 items-center; }
+      .loading-dots span { @apply w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse; }
+      .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+      .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+      /* General App Layout */
+      .app-layout { @apply flex min-h-screen bg-background; }
+      .sidebar { @apply fixed inset-y-0 left-0 w-[280px] bg-background/95 backdrop-blur-xl border-r border-borderline z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto p-6; }
+      .sidebar.active { @apply translate-x-0; }
+      .main-content { @apply flex-1 md:ml-[280px] p-6 lg:p-10 pb-32; }
+
+      .result-container { @apply mt-8 bg-indigo-500/5 border border-indigo-500/20 rounded-3xl p-8 backdrop-blur-sm hidden; }
+      .prediction-card { @apply bg-background border border-borderline rounded-2xl p-6 mb-6; }
+    </style>
+    <style>
+      /* Ambient Glowing Orbs */
+      .glow-orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: 0.15; z-index: -1; }
+    </style>
+</head>
+<body class="app-layout">
+    <!-- Ambient Glowing Orbs -->
+    <div class="glow-orb bg-indigo-600 w-[600px] h-[600px] top-[-20%] left-[-10%]"></div>
+    <div class="glow-orb bg-purple-600 w-[500px] h-[500px] top-[20%] right-[-10%]"></div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="mb-8 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white tracking-tight">Symptom Categories</h2>
+            <button class="md:hidden text-textMuted hover:text-white" onclick="document.querySelector('.sidebar').classList.remove('active')">✕</button>
+        </div>
+        <nav class="category-list flex flex-col gap-1">
+          <li>
+            <a href="#skin" class="category-link active">Skin & External</a>
+          </li>
+          <li><a href="#respiratory" class="category-link">Respiratory</a></li>
+          <li>
+            <a href="#digestive" class="category-link">Digestive & Abdominal</a>
+          </li>
+          <li><a href="#urinary" class="category-link">Urinary & Renal</a></li>
+          <li>
+            <a href="#neurological" class="category-link">Neurological</a>
+          </li>
+          <li>
+            <a href="#musculoskeletal" class="category-link"
+              >Pain & Musculoskeletal</a
+            >
+          </li>
+          <li>
+            <a href="#general" class="category-link">General & Systemic</a>
+          </li>
+          <li><a href="#vision" class="category-link">Eye & Vision</a></li>
+          <li><a href="#other" class="category-link">Other</a></li>
+        </nav>
+      </aside>
+
+      <!-- Mobile Top Bar -->
+      <div class="md:hidden fixed top-0 w-full bg-background/95 backdrop-blur-xl border-b border-borderline flex items-center justify-between p-4 z-30">
+        <div class="font-bold text-white tracking-tight flex items-center gap-2">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 text-indigo-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+           Medora
+        </div>
+        <button class="text-white hover:text-indigo-400 p-2" onclick="document.querySelector('.sidebar').classList.add('active')">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+      </div>
+
+      <main class="main-content pt-20 md:pt-10">
+        <header class="mb-10">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <a href="/" class="px-4 py-2 rounded-full border border-white/10 hover:bg-white/5 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition w-max text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+              Home
+            </a>
+            <div id="google_translate_element" class="bg-white/5 border border-borderline rounded-xl px-4 py-2 hover:bg-white/10 transition cursor-pointer flex items-center w-max">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; opacity: 0.7;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">Select Your Symptoms</h1>
+          <p class="text-textMuted">Choose the symptoms you are experiencing from the categories on the left.</p>
+        </header>
+
+        <form id="prediction-form" class="relative">
+          <div id="skin" class="symptom-section active">
+            <h3>Skin & External</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input type="checkbox" name="symptom" value="itching" />
+                Itching</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="skin_rash" /> Skin
+                Rash</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="nodal_skin_eruptions"
+                />
+                Nodal Skin Eruptions</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="red_sore_around_nose"
+                />
+                Red Sore Around Nose</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="yellow_crust_ooze"
+                />
+                Yellow Crust Ooze</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="blister" />
+                Blister</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="blackheads" />
+                Blackheads</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="scurring" />
+                Scurring</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="skin_peeling" />
+                Skin Peeling</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="silver_like_dusting"
+                />
+                Silver-like Dusting</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="small_dents_in_nails"
+                />
+                Small Dents in Nails</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="inflammatory_nails"
+                />
+                Inflammatory Nails</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="pus_filled_pimples"
+                />
+                Pus-filled Pimples</label
+              >
+            </div>
+          </div>
+
+          <div id="respiratory" class="symptom-section">
+            <h3>Respiratory</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="continuous_sneezing"
+                />
+                Continuous Sneezing</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="cough" />
+                Cough</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="breathlessness" />
+                Breathlessness</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="phlegm" />
+                Phlegm</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="throat_irritation"
+                />
+                Throat Irritation</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="sinus_pressure" />
+                Sinus Pressure</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="runny_nose" />
+                Runny Nose</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="congestion" />
+                Congestion</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="chest_pain" />
+                Chest Pain</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="blood_in_sputum"
+                />
+                Blood in Sputum</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="mucoid_sputum" />
+                Mucoid Sputum</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="rusty_sputum" />
+                Rusty Sputum</label
+              >
+            </div>
+          </div>
+
+          <div id="digestive" class="symptom-section">
+            <h3>Digestive & Abdominal</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input type="checkbox" name="symptom" value="stomach_pain" />
+                Stomach Pain</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="acidity" />
+                Acidity</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="ulcers_on_tongue"
+                />
+                Ulcers on Tongue</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="vomiting" />
+                Vomiting</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="indigestion" />
+                Indigestion</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="constipation" />
+                Constipation</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="abdominal_pain" />
+                Abdominal Pain</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="diarrhoea" />
+                Diarrhoea</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="mild_fever" />
+                Mild Fever</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="yellow_urine" />
+                Yellow Urine</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="yellowing_of_eyes"
+                />
+                Yellowing of Eyes</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="acute_liver_failure"
+                />
+                Acute Liver Failure</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="fluid_overload" />
+                Fluid Overload</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="swelling_of_stomach"
+                />
+                Swelling of Stomach</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="belly_pain" />
+                Belly Pain</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="abnormal_menstruation"
+                />
+                Abnormal Menstruation</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="stomach_bleeding"
+                />
+                Stomach Bleeding</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="distention_of_abdomen"
+                />
+                Distention of Abdomen</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="passage_of_gases"
+                />
+                Passage of Gases</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="history_of_alcohol_consumption"
+                />
+                History of Alcohol Consumption</label
+              >
+            </div>
+          </div>
+
+          <div id="urinary" class="symptom-section">
+            <h3>Urinary & Renal</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="burning_micturition"
+                />
+                Burning Micturition</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="spotting_urination"
+                />
+                Spotting Urination</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="bladder_discomfort"
+                />
+                Bladder Discomfort</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="foul_smell_of_urine"
+                />
+                Foul Smell of Urine</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="continuous_feel_of_urine"
+                />
+                Continuous Feel of Urine</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="polyuria" />
+                Polyuria</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="dehydration" />
+                Dehydration</label
+              >
+            </div>
+          </div>
+
+          <div id="neurological" class="symptom-section">
+            <h3>Neurological</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input type="checkbox" name="symptom" value="dizziness" />
+                Dizziness</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="cramps" />
+                Cramps</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="spinning_movements"
+                />
+                Spinning Movements</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="loss_of_balance"
+                />
+                Loss of Balance</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="unsteadiness" />
+                Unsteadiness</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="weakness_of_one_body_side"
+                />
+                Weakness of One Body Side</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="loss_of_smell" />
+                Loss of Smell</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="altered_sensorium"
+                />
+                Altered Sensorium</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="depression" />
+                Depression</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="irritability" />
+                Irritability</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="lack_of_concentration"
+                />
+                Lack of Concentration</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="visual_disturbances"
+                />
+                Visual Disturbances</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="slurred_speech" />
+                Slurred Speech</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="restlessness" />
+                Restlessness</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="lethargy" />
+                Lethargy</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="anxiety" />
+                Anxiety</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="mood_swings" />
+                Mood Swings</label
+              >
+            </div>
+          </div>
+
+          <div id="musculoskeletal" class="symptom-section">
+            <h3>Pain & Musculoskeletal</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input type="checkbox" name="symptom" value="joint_pain" />
+                Joint Pain</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="muscle_wasting" />
+                Muscle Wasting</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="back_pain" /> Back
+                Pain</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="pain_behind_the_eyes"
+                />
+                Pain Behind the Eyes</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="neck_pain" /> Neck
+                Pain</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="knee_pain" /> Knee
+                Pain</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="hip_joint_pain" />
+                Hip Joint Pain</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="muscle_weakness"
+                />
+                Muscle Weakness</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="stiff_neck" />
+                Stiff Neck</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="swelling_joints"
+                />
+                Swelling Joints</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="movement_stiffness"
+                />
+                Movement Stiffness</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="muscle_pain" />
+                Muscle Pain</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="painful_walking"
+                />
+                Painful Walking</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="hand_swelling" />
+                Hand Swelling</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="foul_smell_of_urine"
+                />
+                Swollen Legs</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="swollen_blood_vessels"
+                />
+                Swollen Blood Vessels</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="prominent_veins"
+                />
+                Prominent Veins</label
+              >
+            </div>
+          </div>
+
+          <div id="general" class="symptom-section">
+            <h3>General & Systemic</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input type="checkbox" name="symptom" value="fever" />
+                Fever</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="fatigue" />
+                Fatigue</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="weight_loss" />
+                Weight Loss</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="headache" />
+                Headache</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="high_fever" />
+                High Fever</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="weakness_in_limbs"
+                />
+                Weakness in Limbs</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="chills" />
+                Chills</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="swelling_of_lymph_nodes"
+                />
+                Swelling of Lymph Nodes</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="malaise" />
+                Malaise</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="cold_hands_and_feets"
+                />
+                Cold Hands and Feet</label
+              >
+            </div>
+          </div>
+
+          <div id="vision" class="symptom-section">
+            <h3>Eye & Vision</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input type="checkbox" name="symptom" value="watery_eyes" />
+                Watery Eyes</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="redness_of_eyes"
+                />
+                Redness of Eyes</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="puffy_eyes" />
+                Puffy Eyes</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="dark_circles_under_eyes"
+                />
+                Dark Circles Under Eyes</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="sunken_eyes" />
+                Sunken Eyes</label
+              >
+            </div>
+          </div>
+
+          <div id="other" class="symptom-section">
+            <h3>Other</h3>
+            <div class="symptoms-grid">
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="pain_in_anal_region"
+                />
+                Pain in Anal Region</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="painful_bowel_movements"
+                />
+                Painful Bowel Movements</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="pus" /> Pus</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="bloody_stool" />
+                Bloody Stool</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="irritation_in_anus"
+                />
+                Irritation in Anus</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="receiving_blood_transfusion"
+                />
+                History of Blood Transfusion</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="receiving_unsterile_injections"
+                />
+                History of Unsterile Injections</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="coma" />
+                Coma</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="stiff_muscles" />
+                Stiff Muscles</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="alopecia" />
+                Alopecia</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="internal_itching"
+                />
+                Internal Itching</label
+              >
+              <label
+                ><input type="checkbox" name="symptom" value="tuberculosis" />
+                Tuberculosis</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="symptom"
+                  value="red_spots_over_body"
+                />
+                Red Spots Over Body</label
+              >
+            </div>
+          </div>
+
+          <div class="fixed bottom-0 right-0 w-full md:w-[calc(100%-280px)] bg-background/90 backdrop-blur-xl border-t border-borderline p-4 md:px-10 flex flex-col sm:flex-row justify-end items-center gap-3 z-20">
+            <button type="reset" class="w-full sm:w-auto px-6 py-3 rounded-xl text-textMuted hover:text-white font-medium hover:bg-white/5 transition">Clear All</button>
+            <button type="submit" class="w-full sm:w-auto bg-white hover:bg-gray-200 text-black px-8 py-3 rounded-full font-bold shadow-[0_0_20px_rgba(255,255,255,0.15)] transition hover:scale-[1.02] flex items-center justify-center gap-2">
+              <span>Predict Disease</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </form>
+
+        <div id="result" class="result-container">
+          <h2 class="text-2xl font-bold text-white mb-6">Your Prediction Result</h2>
+          <div class="prediction-card">
+            <p class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Most Likely Condition:</p>
+            <p id="prediction-result" class="text-3xl font-extrabold text-white"></p>
+          </div>
+          <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 text-red-400 text-sm">
+            <span class="font-bold">⚠️ Important:</span> This prediction is for informational purposes only and is not a medical diagnosis. Always consult with a qualified healthcare professional.
+          </div>
+          <button class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-medium hover:bg-white/10 transition" onclick="document.getElementById('prediction-form').reset(); document.getElementById('result').style.display='none'; window.scrollTo({top:0,behavior:'smooth'});">
+            Check Other Symptoms
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-content-inner">
+          <button type="button" class="modal-close" onclick="closeResultModal()">&times;</button>
+          
+          <div class="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-20"></div>
+            <h2 class="text-2xl font-bold text-white mb-2 relative z-10">Your Prediction Result</h2>
+            <p id="modalDiseaseCategory" class="text-indigo-200 font-medium text-sm relative z-10"></p>
+          </div>
+
+          <div class="p-6 md:p-8 space-y-8">
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider mb-1">Predicted Condition</p>
+                <p id="modalDiseaseName" class="text-2xl font-extrabold text-white"></p>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider mb-1">Recommended Specialist</p>
+                <p id="modalSpecialist" class="text-xl font-bold text-indigo-400"></p>
+              </div>
+            </div>
+
+            <div id="precautions" class="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-5"></div>
+
+            <!-- Booking Section dynamically generated -->
+            <div class="booking-section pt-2 border-t border-borderline" id="booking-section">
+              <div class="booking-section-title">
+                👨‍⚕️ <span>Book a Doctor Appointment</span>
+              </div>
+              <div class="specialty-chip" id="specialty-chip"></div>
+              <div id="booking-doctors-loading" class="text-sm text-textMuted py-3 hidden">
+                <span class="loading-dots"><span></span><span></span><span></span></span> Finding doctors…
+              </div>
+              <div class="doctors-grid" id="doctors-grid"></div>
+            </div>
+          </div>
+
+          <div class="bg-red-500/5 border-t border-red-500/10 p-6 md:p-8">
+            <p class="text-[11px] text-red-400/80 leading-relaxed">
+              ⚠️ <strong class="text-red-400">Important Disclaimer:</strong> This prediction is for
+              informational purposes only and does not constitute medical advice,
+              diagnosis, or treatment. Always consult with a qualified healthcare
+              professional.
+            </p>
+          </div>
+          
+          <div class="bg-black/20 p-6 flex flex-col sm:flex-row justify-end gap-3 rounded-b-3xl border-t border-borderline">
+            <button type="button" class="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition text-sm" onclick="closeResultModal(); document.getElementById('prediction-form').reset(); window.scrollTo({top:0,behavior:'smooth'});">
+              Check Other Symptoms
+            </button>
+            <a href="/my-bookings" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold transition text-sm text-center">
+              📋 My Bookings
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BOOKING SUB-MODAL ── -->
+    <div class="book-overlay" id="book-overlay">
+      <div class="book-panel">
+        <button class="book-panel-close" onclick="closeBookPanel()">&#x2715;</button>
+        <div id="book-panel-body">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            includedLanguages: "en,hi,bn,te,mr,ta,ur,gu,kn,ml,pa,or,as,ne,sa,bho",
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false,
+          },
+          "google_translate_element",
+        );
+      }
+    </script>
+    <style>
+      .goog-te-gadget { font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 0 !important; color: transparent !important; }
+      .goog-te-gadget .goog-te-combo { font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 13px !important; font-weight:600; color: #fafafa !important; background-color: #121212 !important; border:1px solid rgba(255,255,255,0.1); outline:none; padding:6px 10px; border-radius:8px; cursor:pointer; }
+      .goog-te-gadget .goog-te-combo option { background-color: #121212 !important; color: #fff !important; }
+      .goog-te-banner-frame, .goog-te-gadget img { display:none !important; }
+      body { top: 0px !important; }
+    </style>
+    <script
+      type="text/javascript"
+      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+    ></script>
+    <script src="/static/disease_mapping.js"></script>
+    <script src="/static/script.js"></script>
+    <script src="/static/booking.js"></script>
+  </body>
+</html>
